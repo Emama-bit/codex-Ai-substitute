@@ -76,7 +76,7 @@ export default function LeadsPage() {
           proxyId: firstProxy.id,
           skillName: firstProxy.name,
           customerName: "演示需求方 - 林小舟",
-          contact: "微信 demo-skill-001 / demo@skill.market",
+          contact: "????? / ???????",
           need: [
             `我试镜了「${firstProxy.name}」，希望真人继续协助这个需求。`,
             "",
