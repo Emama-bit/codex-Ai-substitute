@@ -1,210 +1,210 @@
 # Personal AI Agent
 
-一个可独立运行的个人智能体 Agent，通过日常对话和数据导入不断学习你的习惯、偏好和经历。
+A standalone personal AI agent that continuously learns your habits, preferences, and experiences through daily conversations and data imports.
 
-## 项目简介
+## Overview
 
-本项目包含两个核心模块：
+This project contains two core modules:
 
-### 1. 市场平台（Next.js Web 应用）
+### 1. Marketplace Platform (Next.js Web App)
 
-让需求方先通过 Skill AI 低成本"试镜"自由职业者的方法、风格和判断能力，再决定是否提交真人服务意向；响应侧可以发布自己的 Skill AI，用经验、流程、案例和服务边界承接轻量咨询，并把高价值需求转化为线索。
+An AI-enhanced freelance service marketplace MVP. Clients can "audition" freelancers at low cost through Skill AI to evaluate their methods, style, and judgment before submitting real service requests. On the provider side, freelancers can publish their own Skill AI to handle light consultations and convert high-value requests into leads.
 
-**已实现功能：**
-- Skill 市场（搜索、筛选、排序）
-- 需求雷达（模糊需求匹配）
-- AI 试镜聊天（RAG 知识库）
-- 线索 CRM（新线索 → 已联系 → 方案沟通 → 成交/关闭）
-- 报价单与托管订单模拟
-- 评价系统
-- 需求侧/响应侧个人中心
+**Implemented Features:**
+- Skill Marketplace (search, filter, sort)
+- Demand Radar (fuzzy demand matching)
+- AI Audition Chat (RAG knowledge base)
+- Lead CRM (New → Contacted → Proposal → Won/Closed)
+- Quotation & Escrow Order Simulation
+- Review System
+- Client/Provider Personal Centers
 
-### 2. 个人智能体 Agent（独立 Node.js 服务）
+### 2. Personal Agent (Standalone Node.js Service)
 
-一个能"记住你"的个人 AI 助手，通过日常对话和数据导入不断学习你的习惯、偏好和经历。
+A personal AI assistant that "remembers you" — continuously learning your habits, preferences, and experiences through daily conversations and data imports.
 
-**已实现功能：**
-- 🧠 **个人画像** — 记录习惯、偏好、工作方式
-- 📝 **事件记忆** — 自动提取对话中的事件、人物、决策
-- 👥 **人脉管理** — 自动识别人物关系和互动历史
-- 📱 **微信导入** — 解析导出的聊天记录，自动提取信息
-- 💬 **CLI / HTTP API** — 两种接入方式
-- 🔄 **跨对话记忆** — 新对话自动加载历史画像
+**Implemented Features:**
+- 🧠 **Personal Profile** — Record habits, preferences, and work style
+- 📝 **Event Memory** — Auto-extract events, people, and decisions from conversations
+- 👥 **Relationship Management** — Auto-identify relationships and interaction history
+- 📱 **WeChat Import** — Parse exported chat logs and extract information automatically
+- 💬 **CLI / HTTP API** — Two access modes
+- 🔄 **Cross-Session Memory** — Auto-load historical profile in new conversations
 
-## 快速开始
+## Quick Start
 
-### 市场平台
+### Marketplace Platform
 
 ```bash
-# 安装依赖
+# Install dependencies
 npm install
 
-# 启动开发服务器
+# Start development server
 npm run dev
 ```
 
-打开 http://localhost:3000 查看市场页面。
+Open http://localhost:3000 to view the marketplace.
 
-### 个人智能体 Agent
+### Personal Agent
 
 ```bash
-# 进入 agent 目录
+# Enter agent directory
 cd agent
 
-# 安装依赖
+# Install dependencies
 npm install
 
-# 复制配置模板
+# Copy config template
 cp .env.example .env
 
-# 编辑 .env，填入你的 API 配置
+# Edit .env with your API configuration
 # API_KEY=your-api-key
 # BASE_URL=https://your-proxy-url/v1
 # MODEL=your-model-name
 
-# 启动 CLI 模式（交互式聊天）
+# Start CLI mode (interactive chat)
 npx tsx src/index.ts
 
-# 或启动 HTTP API 模式
+# Or start HTTP API mode
 npx tsx src/index.ts --http --port 3001
 ```
 
-## 使用示例
+## Usage Examples
 
-### 个人智能体 CLI 模式
+### Personal Agent CLI Mode
 
 ```
-You: 我叫小明，习惯每天早上7点起床，喜欢用 VS Code
+You: My name is Alex, I wake up at 7am every day and prefer using VS Code
 
-Agent: 小明，你好！我已经记住了你的习惯：
-- 早上 7:00 起床
-- 编程工具：VS Code
+Agent: Hi Alex! I've recorded your habits:
+- Wake up at 7:00 AM
+- Coding tool: VS Code
 
-You: 今天跟老王讨论了新项目技术选型，决定用 Rust
+You: Had a meeting with Bob today to discuss tech stack for the new project, decided to use Rust
 
-Agent: （自动记录事件 + 决策 + 人物）
-好的，我帮你记下了。老王是谁？同事还是朋友？
+Agent: (Auto-records event + decision + person)
+Got it, I've noted that down. Who is Bob? A colleague or friend?
 
-You: 帮我导入微信聊天记录：D:\wechat-export.txt，我的昵称是小明
+You: Import my WeChat chat log: D:\wechat-export.txt, my nickname is Alex
 
-Agent: 导入成功！提取了 5 个事件、3 条习惯、2 个人物...
+Agent: Import successful! Extracted 5 events, 3 habits, 2 people...
 ```
 
-### HTTP API 模式
+### HTTP API Mode
 
 ```bash
-# 启动服务
+# Start the service
 npx tsx src/index.ts --http --port 3001
 
-# 发送请求
+# Send a request
 curl -X POST http://localhost:3001/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "有哪些可用的 Skill？"}'
+  -d '{"message": "What skills are available?"}'
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 codex-Ai-substitute/
-├── src/                    # 市场平台源码（Next.js）
-│   ├── app/               # 页面路由
-│   ├── components/        # React 组件
-│   └── lib/               # 工具函数（store、rag、ai）
-├── data/                   # 市场数据（JSON）
-├── agent/                  # 个人智能体 Agent
+├── src/                    # Marketplace source (Next.js)
+│   ├── app/               # Page routes
+│   ├── components/        # React components
+│   └── lib/               # Utilities (store, rag, ai)
+├── data/                   # Marketplace data (JSON)
+├── agent/                  # Personal AI Agent
 │   ├── src/
-│   │   ├── agent.ts       # Agent 核心循环
-│   │   ├── tools.ts       # 工具定义（24个）
-│   │   ├── profile.ts     # 个人画像系统
-│   │   ├── events.ts      # 事件记忆系统
-│   │   ├── wechat.ts      # 微信聊天记录解析
-│   │   ├── system.ts      # 系统提示词
-│   │   ├── memory.ts      # 对话持久化
-│   │   ├── cli.ts         # CLI 入口
-│   │   ├── http.ts        # HTTP API 入口
-│   │   └── lib/           # 共享工具（store、rag）
-│   ├── data/              # 市场数据（Agent 读取）
-│   └── memory/            # 个人记忆存储（gitignore）
+│   │   ├── agent.ts       # Agent core loop
+│   │   ├── tools.ts       # Tool definitions (24 tools)
+│   │   ├── profile.ts     # Personal profile system
+│   │   ├── events.ts      # Event memory system
+│   │   ├── wechat.ts      # WeChat chat log parser
+│   │   ├── system.ts      # System prompt
+│   │   ├── memory.ts      # Conversation persistence
+│   │   ├── cli.ts         # CLI entry point
+│   │   ├── http.ts        # HTTP API entry point
+│   │   └── lib/           # Shared utilities (store, rag)
+│   ├── data/              # Marketplace data (Agent reads)
+│   └── memory/            # Personal memory storage (gitignored)
 ├── package.json
 └── README.md
 ```
 
-## Agent 工具列表
+## Agent Tools
 
-### 市场业务工具（18个）
-| 工具 | 说明 |
-|------|------|
-| `list_skills` | 列出所有 Skill |
-| `get_skill` | 获取 Skill 详情 |
-| `create_skill` | 创建新 Skill |
-| `delete_skill` | 删除 Skill |
-| `chat_with_skill` | 与 Skill AI 对话 |
-| `rate_skill` | 评价 Skill |
-| `list_leads` | 列出线索 |
-| `get_lead` | 获取线索详情 |
-| `create_lead` | 创建线索 |
-| `update_lead` | 更新线索状态 |
-| `list_quotes` | 列出报价单 |
-| `create_quote` | 创建报价单 |
-| `accept_quote` | 接受报价 |
-| `list_orders` | 列出订单 |
-| `create_order` | 创建订单 |
-| `update_order` | 更新订单状态 |
-| `list_reviews` | 列出评价 |
-| `create_review` | 创建评价 |
+### Marketplace Tools (18)
+| Tool | Description |
+|------|-------------|
+| `list_skills` | List all available Skills |
+| `get_skill` | Get Skill details |
+| `create_skill` | Create a new Skill |
+| `delete_skill` | Delete a Skill |
+| `chat_with_skill` | Chat with a Skill AI |
+| `rate_skill` | Rate a Skill |
+| `list_leads` | List all leads |
+| `get_lead` | Get lead details |
+| `create_lead` | Create a new lead |
+| `update_lead` | Update lead status |
+| `list_quotes` | List all quotes |
+| `create_quote` | Create a quote |
+| `accept_quote` | Accept a quote |
+| `list_orders` | List all orders |
+| `create_order` | Create an order |
+| `update_order` | Update order status |
+| `list_reviews` | List reviews |
+| `create_review` | Create a review |
 
-### 个人智能体工具（8个）
-| 工具 | 说明 |
-|------|------|
-| `feed_habit` | 喂养个人习惯 |
-| `feed_preference` | 喂养偏好设置 |
-| `feed_document` | 喂养文档（简历/日记） |
-| `get_profile` | 查看个人画像 |
-| `add_event` | 记录事件 |
-| `add_decision` | 记录决策 |
-| `search_events` | 搜索事件记忆 |
-| `import_wechat` | 导入微信聊天记录 |
+### Personal Agent Tools (8)
+| Tool | Description |
+|------|-------------|
+| `feed_habit` | Feed a personal habit |
+| `feed_preference` | Feed a preference setting |
+| `feed_document` | Feed a document (resume/diary) |
+| `get_profile` | View personal profile |
+| `add_event` | Record an event |
+| `add_decision` | Record a decision |
+| `search_events` | Search event memory |
+| `import_wechat` | Import WeChat chat logs |
 
-## 技术栈
+## Tech Stack
 
-### 市场平台
-- **前端/后端**: Next.js 16 (App Router)
+### Marketplace Platform
+- **Frontend/Backend**: Next.js 16 (App Router)
 - **UI**: React + Tailwind CSS
-- **数据存储**: 本地 JSON 文件
-- **AI 调用**: 预留适配层，支持 mock/真实模型切换
+- **Storage**: Local JSON files
+- **AI**: Adapter layer with mock/real model switching
 
-### 个人智能体
-- **运行时**: Node.js + TypeScript
-- **AI SDK**: OpenAI 兼容格式
-- **执行**: tsx（直接运行 TS）
-- **存储**: 本地 JSON 文件
+### Personal Agent
+- **Runtime**: Node.js + TypeScript
+- **AI SDK**: OpenAI-compatible format
+- **Execution**: tsx (run TS directly)
+- **Storage**: Local JSON files
 
-## 环境变量
+## Environment Variables
 
-创建 `agent/.env` 文件：
+Create `agent/.env` file:
 
 ```env
-# API 配置（支持 OpenAI 兼容格式）
+# API Configuration (OpenAI-compatible format)
 API_KEY=your-api-key-here
 BASE_URL=https://your-proxy-url/v1
 MODEL=your-model-name
 
-# 数据目录
+# Data directories
 DATA_DIR=../data
 MEMORY_DIR=./memory
 ```
 
-## 微信聊天记录导入
+## WeChat Chat Import
 
-1. 在 PC 微信打开聊天窗口
-2. 选中聊天记录 → 复制
-3. 粘贴给 Agent，或保存为 `.txt` 文件后告诉 Agent 路径
+1. Open chat window in WeChat PC
+2. Select chat messages → Copy
+3. Paste to Agent, or save as `.txt` file and tell Agent the file path
 
-支持格式：
-- 微信 PC 版导出格式
-- 时间戳格式 `[2024-01-15 14:30:20] 昵称: 消息`
-- 简单格式 `2024-01-15 14:30 昵称: 消息`
+Supported formats:
+- WeChat PC export format
+- Timestamp format `[2024-01-15 14:30:20] Username: Message`
+- Simple format `2024-01-15 14:30 Username: Message`
 
-## 联系方式
+## Contact
 
-如有问题，请联系：2012943494@qq.com 或 lk2012943494@outlook.com
+For questions, contact: 2012943494@qq.com or lk2012943494@outlook.com
