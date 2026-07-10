@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "personal-memory": {
+      "command": "npx",
+      "args": ["tsx", "你的路径/agent/src/server.ts"]
+    }
+  }
+}

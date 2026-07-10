@@ -12,6 +12,7 @@ import { addMemory, searchMemories, getRecentMemories, getMemoriesForPrompt, rem
 import { upsertPerson, getPersonByName, getPersonSummary, getPeople, updatePersonRelation } from "./memory/people";
 import { addHabit, removeHabit, updatePreference, updateBio, updateName, getProfileSummary, loadProfile } from "./profile";
 import { importWeChatChat, importWeChatFile } from "./wechat";
+import { readBrowserHistory, extractInterests } from "./browser";
 import { closeDb } from "./memory/db";
 
 const server = new McpServer({
@@ -236,6 +237,48 @@ server.tool(
   async (args) => {
     const result = importWeChatFile(args.filePath, args.ownerName || "");
     return { content: [{ type: "text", text: JSON.stringify(result) }] };
+  }
+);
+
+// ─── Browser History ───────────────────────────────────────
+
+server.tool(
+  "import_browser_history",
+  "读取浏览器历史记录，提取用户兴趣领域和关注话题。需要用户授权。",
+  {
+    limit: z.number().optional().describe("读取最近多少条记录，默认100"),
+    browser: z.enum(["chrome", "edge"]).optional().describe("浏览器类型，默认chrome"),
+  },
+  async (args) => {
+    const entries = readBrowserHistory(args.limit || 100, args.browser || "chrome");
+    if (entries.length === 0) {
+      return { content: [{ type: "text", text: "未找到浏览器历史记录，请确认浏览器已关闭且有历史数据。" }] };
+    }
+
+    const { domains, topics } = extractInterests(entries);
+
+    // Auto-save top domains as interests
+    for (const d of domains.slice(0, 5)) {
+      addMemory("insight", `经常访问: ${d.domain}`, {
+        category: "兴趣",
+        importance: 4,
+        source: "browser-history",
+      });
+    }
+
+    const parts = [
+      `## 浏览器历史分析（最近 ${entries.length} 条记录）`,
+      "",
+      "### 常访问网站",
+      ...domains.slice(0, 10).map(d => `- ${d.domain} (${d.count}次)`),
+      "",
+      "### 关注话题",
+      ...topics.slice(0, 10).map(t => `- ${t.topic} (${t.count}次)`),
+      "",
+      `已自动记录 Top 5 兴趣领域。`,
+    ];
+
+    return { content: [{ type: "text", text: parts.join("\n") }] };
   }
 );
 

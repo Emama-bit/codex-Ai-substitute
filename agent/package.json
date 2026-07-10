@@ -1,11 +1,10 @@
 {
   "name": "personal-memory-mcp",
   "version": "1.0.0",
-  "description": "Personal Memory MCP Server — 让 AI 记住你",
+  "description": "🧠 Personal Memory MCP Server — 让 AI 记住你",
   "private": true,
   "scripts": {
     "mcp": "npx tsx src/server.ts",
-    "cli": "npx tsx src/index.ts --cli",
     "migrate": "npx tsx scripts/migrate-json-to-sqlite.ts"
   },
   "dependencies": {
