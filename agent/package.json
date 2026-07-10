@@ -1,17 +1,21 @@
 {
-  "name": "marketplace-agent",
-  "version": "0.1.0",
+  "name": "personal-memory-mcp",
+  "version": "1.0.0",
+  "description": "Personal Memory MCP Server — 让 AI 记住你",
   "private": true,
   "scripts": {
-    "cli": "npx tsx src/index.ts",
-    "serve": "npx tsx src/index.ts --http"
+    "mcp": "npx tsx src/server.ts",
+    "cli": "npx tsx src/index.ts --cli",
+    "migrate": "npx tsx scripts/migrate-json-to-sqlite.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "better-sqlite3": "^12.11.1",
     "dotenv": "^16.4.0",
     "openai": "^6.45.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "tsx": "^4.0.0",
     "typescript": "^5"

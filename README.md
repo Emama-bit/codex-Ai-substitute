@@ -1,210 +1,123 @@
-# Personal AI Agent
+# Personal Memory MCP Server
 
-A standalone personal AI agent that continuously learns your habits, preferences, and experiences through daily conversations and data imports.
+> 让 AI 记住你 — 一个基于 MCP 协议的个人记忆引擎
 
-## Overview
+## 这是什么
 
-This project contains two core modules:
+Personal Memory 是一个 MCP (Model Context Protocol) Server，为 Claude、Cursor 等 AI 宿主提供**持久化个人记忆**能力。
 
-### 1. Marketplace Platform (Next.js Web App)
+装上之后，AI 能记住你的习惯、偏好、经历、人际关系，不再每次对话都从零开始。
 
-An AI-enhanced freelance service marketplace MVP. Clients can "audition" freelancers at low cost through Skill AI to evaluate their methods, style, and judgment before submitting real service requests. On the provider side, freelancers can publish their own Skill AI to handle light consultations and convert high-value requests into leads.
+## 功能
 
-**Implemented Features:**
-- Skill Marketplace (search, filter, sort)
-- Demand Radar (fuzzy demand matching)
-- AI Audition Chat (RAG knowledge base)
-- Lead CRM (New → Contacted → Proposal → Won/Closed)
-- Quotation & Escrow Order Simulation
-- Review System
-- Client/Provider Personal Centers
+| 工具 | 说明 |
+|------|------|
+| `add_memory` | 记录事件/决策/洞见（自动去重） |
+| `search_memories` | FTS5 全文搜索历史记忆 |
+| `get_memory_summary` | 获取完整的个人画像概览 |
+| `upsert_person` | 记录/更新人脉关系 |
+| `feed_habit` | 记录用户习惯 |
+| `feed_preference` | 记录用户偏好 |
+| `import_wechat` | 导入微信聊天记录，自动提取事件 |
+| `archive_old_memories` | 归档旧记忆，减少噪音 |
 
-### 2. Personal Agent (Standalone Node.js Service)
+## 快速开始
 
-A personal AI assistant that "remembers you" — continuously learning your habits, preferences, and experiences through daily conversations and data imports.
-
-**Implemented Features:**
-- 🧠 **Personal Profile** — Record habits, preferences, and work style
-- 📝 **Event Memory** — Auto-extract events, people, and decisions from conversations
-- 👥 **Relationship Management** — Auto-identify relationships and interaction history
-- 📱 **WeChat Import** — Parse exported chat logs and extract information automatically
-- 💬 **CLI / HTTP API** — Two access modes
-- 🔄 **Cross-Session Memory** — Auto-load historical profile in new conversations
-
-## Quick Start
-
-### Marketplace Platform
+### 1. 安装依赖
 
 ```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-Open http://localhost:3000 to view the marketplace.
-
-### Personal Agent
-
-```bash
-# Enter agent directory
 cd agent
-
-# Install dependencies
 npm install
-
-# Copy config template
-cp .env.example .env
-
-# Edit .env with your API configuration
-# API_KEY=your-api-key
-# BASE_URL=https://your-proxy-url/v1
-# MODEL=your-model-name
-
-# Start CLI mode (interactive chat)
-npx tsx src/index.ts
-
-# Or start HTTP API mode
-npx tsx src/index.ts --http --port 3001
 ```
 
-## Usage Examples
-
-### Personal Agent CLI Mode
-
-```
-You: My name is Alex, I wake up at 7am every day and prefer using VS Code
-
-Agent: Hi Alex! I've recorded your habits:
-- Wake up at 7:00 AM
-- Coding tool: VS Code
-
-You: Had a meeting with Bob today to discuss tech stack for the new project, decided to use Rust
-
-Agent: (Auto-records event + decision + person)
-Got it, I've noted that down. Who is Bob? A colleague or friend?
-
-You: Import my WeChat chat log: D:\wechat-export.txt, my nickname is Alex
-
-Agent: Import successful! Extracted 5 events, 3 habits, 2 people...
-```
-
-### HTTP API Mode
+### 2. 迁移旧数据（可选）
 
 ```bash
-# Start the service
-npx tsx src/index.ts --http --port 3001
-
-# Send a request
-curl -X POST http://localhost:3001/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "What skills are available?"}'
+npm run migrate
 ```
 
-## Project Structure
+### 3. 配置 Claude Desktop
 
-```
-codex-Ai-substitute/
-├── src/                    # Marketplace source (Next.js)
-│   ├── app/               # Page routes
-│   ├── components/        # React components
-│   └── lib/               # Utilities (store, rag, ai)
-├── data/                   # Marketplace data (JSON)
-├── agent/                  # Personal AI Agent
-│   ├── src/
-│   │   ├── agent.ts       # Agent core loop
-│   │   ├── tools.ts       # Tool definitions (24 tools)
-│   │   ├── profile.ts     # Personal profile system
-│   │   ├── events.ts      # Event memory system
-│   │   ├── wechat.ts      # WeChat chat log parser
-│   │   ├── system.ts      # System prompt
-│   │   ├── memory.ts      # Conversation persistence
-│   │   ├── cli.ts         # CLI entry point
-│   │   ├── http.ts        # HTTP API entry point
-│   │   └── lib/           # Shared utilities (store, rag)
-│   ├── data/              # Marketplace data (Agent reads)
-│   └── memory/            # Personal memory storage (gitignored)
-├── package.json
-└── README.md
+编辑 Claude Desktop 设置 → Developer → Edit Config：
+
+```json
+{
+  "mcpServers": {
+    "personal-memory": {
+      "command": "npx",
+      "args": ["tsx", "E:/codex-Ai-substitute/agent/src/server.ts"]
+    }
+  }
+}
 ```
 
-## Agent Tools
+### 4. 配置 Cursor
 
-### Marketplace Tools (18)
-| Tool | Description |
-|------|-------------|
-| `list_skills` | List all available Skills |
-| `get_skill` | Get Skill details |
-| `create_skill` | Create a new Skill |
-| `delete_skill` | Delete a Skill |
-| `chat_with_skill` | Chat with a Skill AI |
-| `rate_skill` | Rate a Skill |
-| `list_leads` | List all leads |
-| `get_lead` | Get lead details |
-| `create_lead` | Create a new lead |
-| `update_lead` | Update lead status |
-| `list_quotes` | List all quotes |
-| `create_quote` | Create a quote |
-| `accept_quote` | Accept a quote |
-| `list_orders` | List all orders |
-| `create_order` | Create an order |
-| `update_order` | Update order status |
-| `list_reviews` | List reviews |
-| `create_review` | Create a review |
+编辑 `.cursor/mcp.json`：
 
-### Personal Agent Tools (8)
-| Tool | Description |
-|------|-------------|
-| `feed_habit` | Feed a personal habit |
-| `feed_preference` | Feed a preference setting |
-| `feed_document` | Feed a document (resume/diary) |
-| `get_profile` | View personal profile |
-| `add_event` | Record an event |
-| `add_decision` | Record a decision |
-| `search_events` | Search event memory |
-| `import_wechat` | Import WeChat chat logs |
-
-## Tech Stack
-
-### Marketplace Platform
-- **Frontend/Backend**: Next.js 16 (App Router)
-- **UI**: React + Tailwind CSS
-- **Storage**: Local JSON files
-- **AI**: Adapter layer with mock/real model switching
-
-### Personal Agent
-- **Runtime**: Node.js + TypeScript
-- **AI SDK**: OpenAI-compatible format
-- **Execution**: tsx (run TS directly)
-- **Storage**: Local JSON files
-
-## Environment Variables
-
-Create `agent/.env` file:
-
-```env
-# API Configuration (OpenAI-compatible format)
-API_KEY=your-api-key-here
-BASE_URL=https://your-proxy-url/v1
-MODEL=your-model-name
-
-# Data directories
-DATA_DIR=../data
-MEMORY_DIR=./memory
+```json
+{
+  "mcpServers": {
+    "personal-memory": {
+      "command": "npx",
+      "args": ["tsx", "E:/codex-Ai-substitute/agent/src/server.ts"]
+    }
+  }
+}
 ```
 
-## WeChat Chat Import
+重启后，AI 自动拥有记忆能力。
 
-1. Open chat window in WeChat PC
-2. Select chat messages → Copy
-3. Paste to Agent, or save as `.txt` file and tell Agent the file path
+## 使用示例
 
-Supported formats:
-- WeChat PC export format
-- Timestamp format `[2024-01-15 14:30:20] Username: Message`
-- Simple format `2024-01-15 14:30 Username: Message`
+```
+你: 我叫小明，每天7点起床，喜欢用 VS Code
+AI: [静默调用 feed_habit + feed_preference]
 
-## Contact
+你: 你还记得我吗？
+AI: 当然！你是小明，早上7点起床，用 VS Code 写代码...
 
-For questions, contact: 2012943494@qq.com or lk2012943494@outlook.com
+你: 帮我搜一下之前关于 Rust 的记忆
+AI: 你之前决定在新项目中使用 Rust，原因是...
+```
+
+## 技术架构
+
+```
+Claude / Cursor / 任何 MCP 宿主
+        │ MCP 协议 (stdio)
+        ▼
+  Personal Memory Server
+  ├── 记忆引擎 (SQLite + FTS5)
+  ├── 人脉管理
+  ├── 用户画像
+  └── 微信聊天导入
+```
+
+- **存储**: SQLite WAL 模式，原子写入
+- **搜索**: FTS5 全文索引，支持中英文
+- **去重**: 写入前自动检测相似记忆
+- **分层**: 7天/30天/归档三层，提示词不膨胀
+- **隐私**: 所有数据仅在本地，不上传
+
+## 项目结构
+
+```
+agent/
+├── src/
+│   ├── server.ts           ← MCP Server 入口
+│   ├── memory/
+│   │   ├── db.ts           ← SQLite 初始化
+│   │   ├── memories.ts     ← 记忆 CRUD + FTS5
+│   │   ├── people.ts       ← 人脉管理
+│   │   └── conversations.ts← 对话存储
+│   ├── profile.ts          ← 用户画像
+│   ├── system.ts           ← 系统提示词
+│   └── wechat.ts           ← 微信聊天解析
+├── memory/agent.db         ← 本地数据
+└── package.json
+```
+
+## License
+
+MIT

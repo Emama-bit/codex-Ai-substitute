@@ -1,8 +1,4 @@
-import fs from "fs";
-import path from "path";
-
-const PROFILE_DIR = process.env.MEMORY_DIR || path.resolve(__dirname, "../memory");
-const PROFILE_FILE = path.join(PROFILE_DIR, "profile.json");
+import { getDb } from "./memory/db";
 
 export interface PersonalProfile {
   name: string;
@@ -23,34 +19,70 @@ export interface Habit {
   createdAt: string;
 }
 
-const DEFAULT_PROFILE: PersonalProfile = {
-  name: "",
-  avatar: "",
-  bio: "",
-  habits: [],
-  preferences: {},
-  workStyle: {},
-  updatedAt: new Date().toISOString(),
-};
-
-function ensureDir(dir: string) {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+function genId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
+// ─── KV helpers ────────────────────────────────────────────
+
+function getKV(key: string): string {
+  const db = getDb();
+  const row = db.prepare("SELECT value FROM profile_kv WHERE key = ?").get(key) as
+    | { value: string }
+    | undefined;
+  return row?.value || "";
+}
+
+function setKV(key: string, value: string): void {
+  const db = getDb();
+  db.prepare(`
+    INSERT INTO profile_kv (key, value) VALUES (?, ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+  `).run(key, value);
+}
+
+// ─── Habits (stored in memories table, type='habit') ───────
+
+function loadHabits(): Habit[] {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT id, category, content, source, importance as confidence, created_at as createdAt
+    FROM memories WHERE type = 'habit' AND archived = 0
+    ORDER BY created_at DESC
+  `).all() as Habit[];
+  return rows;
+}
+
+// ─── Profile CRUD ──────────────────────────────────────────
+
 export function loadProfile(): PersonalProfile {
-  ensureDir(PROFILE_DIR);
-  if (!fs.existsSync(PROFILE_FILE)) return { ...DEFAULT_PROFILE };
-  try {
-    return JSON.parse(fs.readFileSync(PROFILE_FILE, "utf-8"));
-  } catch {
-    return { ...DEFAULT_PROFILE };
-  }
+  const habits = loadHabits();
+  const prefsRaw = getKV("preferences");
+  const wsRaw = getKV("workStyle");
+
+  let preferences: Record<string, string> = {};
+  let workStyle: Record<string, string> = {};
+  try { preferences = JSON.parse(prefsRaw || "{}"); } catch {}
+  try { workStyle = JSON.parse(wsRaw || "{}"); } catch {}
+
+  return {
+    name: getKV("name"),
+    avatar: getKV("avatar"),
+    bio: getKV("bio"),
+    habits,
+    preferences,
+    workStyle,
+    updatedAt: getKV("updatedAt") || new Date().toISOString(),
+  };
 }
 
 export function saveProfile(profile: PersonalProfile): void {
-  ensureDir(PROFILE_DIR);
-  profile.updatedAt = new Date().toISOString();
-  fs.writeFileSync(PROFILE_FILE, JSON.stringify(profile, null, 2));
+  setKV("name", profile.name);
+  setKV("avatar", profile.avatar);
+  setKV("bio", profile.bio);
+  setKV("preferences", JSON.stringify(profile.preferences));
+  setKV("workStyle", JSON.stringify(profile.workStyle));
+  setKV("updatedAt", new Date().toISOString());
 }
 
 export function addHabit(
@@ -59,45 +91,36 @@ export function addHabit(
   source: string = "conversation",
   confidence: number = 8
 ): Habit {
-  const profile = loadProfile();
-  const habit: Habit = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    category,
-    content,
-    source,
-    confidence,
-    createdAt: new Date().toISOString(),
-  };
-  profile.habits.push(habit);
-  saveProfile(profile);
-  return habit;
+  const db = getDb();
+  const ts = new Date().toISOString();
+  const id = genId();
+
+  db.prepare(`
+    INSERT INTO memories (id, type, category, content, source, importance, created_at, updated_at)
+    VALUES (?, 'habit', ?, ?, ?, ?, ?, ?)
+  `).run(id, category, content, source, confidence, ts, ts);
+
+  return { id, category, content, source, confidence, createdAt: ts };
 }
 
 export function removeHabit(id: string): boolean {
-  const profile = loadProfile();
-  const idx = profile.habits.findIndex((h) => h.id === id);
-  if (idx === -1) return false;
-  profile.habits.splice(idx, 1);
-  saveProfile(profile);
-  return true;
+  const db = getDb();
+  const result = db.prepare("DELETE FROM memories WHERE id = ? AND type = 'habit'").run(id);
+  return result.changes > 0;
 }
 
 export function updatePreference(key: string, value: string): void {
-  const profile = loadProfile();
-  profile.preferences[key] = value;
-  saveProfile(profile);
+  const prefs = loadProfile().preferences;
+  prefs[key] = value;
+  setKV("preferences", JSON.stringify(prefs));
 }
 
 export function updateBio(bio: string): void {
-  const profile = loadProfile();
-  profile.bio = bio;
-  saveProfile(profile);
+  setKV("bio", bio);
 }
 
 export function updateName(name: string): void {
-  const profile = loadProfile();
-  profile.name = name;
-  saveProfile(profile);
+  setKV("name", name);
 }
 
 export function getProfileSummary(): string {

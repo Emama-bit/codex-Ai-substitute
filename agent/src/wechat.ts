@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
-import { addEvent, touchPerson, updatePersonInfo } from "./events";
+import { addMemory } from "./memory/memories";
+import { upsertPerson } from "./memory/people";
 import { addHabit, updatePreference } from "./profile";
 
 // ─── Types ───────────────────────────────────────────────
@@ -140,7 +141,7 @@ export function importWeChatChat(
   // Update people records for all participants
   for (const sender of senders) {
     if (sender !== ownerName && sender !== "unknown") {
-      touchPerson(sender, `[微信导入] 参与对话`);
+      upsertPerson(sender, `[微信导入] 参与对话`);
     }
   }
 
@@ -155,7 +156,13 @@ export function importWeChatChat(
     // Extract events from each day's messages
     const events = extractEventsFromMessages(dayMsgs, ownerName, date);
     for (const evt of events) {
-      addEvent(evt.category, evt.summary, evt.details, evt.people, evt.tags, source, date);
+      addMemory("event", evt.summary, {
+        category: evt.category,
+        details: evt.details,
+        people: evt.people,
+        tags: evt.tags,
+        source,
+      });
       extractedEvents++;
     }
 
