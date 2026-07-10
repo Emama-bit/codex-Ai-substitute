@@ -39,6 +39,18 @@ irm https://raw.githubusercontent.com/Emama-bit/personal-memory-mcp/master/insta
 curl -fsSL https://raw.githubusercontent.com/Emama-bit/personal-memory-mcp/master/install.sh | bash
 ```
 
+### Option 2: Manual install
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/Emama-bit/personal-memory-mcp/master/install.ps1 | iex
+```
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/Emama-bit/personal-memory-mcp/master/install.sh | bash
+```
+
 Restart Claude Desktop / Cursor after installation.
 
 ### Option 2: Manual install

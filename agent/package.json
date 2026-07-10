@@ -1,8 +1,13 @@
 {
   "name": "personal-memory-mcp",
   "version": "1.0.0",
-  "description": "🧠 Personal Memory MCP Server — 让 AI 记住你",
+  "description": "🧠 Personal Memory MCP Server — Give your AI a persistent memory",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Emama-bit/personal-memory-mcp.git"
+  },
   "scripts": {
     "mcp": "npx tsx src/server.ts",
     "migrate": "npx tsx scripts/migrate-json-to-sqlite.ts"
@@ -10,13 +15,11 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "better-sqlite3": "^12.11.1",
-    "dotenv": "^16.4.0",
-    "openai": "^6.45.0"
+    "tsx": "^4.0.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
-    "tsx": "^4.0.0",
     "typescript": "^5"
   }
 }
