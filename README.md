@@ -23,20 +23,29 @@ Personal Memory 是一个 MCP (Model Context Protocol) Server，为 Claude、Cur
 
 ## 快速开始
 
-### 1. 安装依赖
+### 方式一：一键安装（推荐）
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/Emama-bit/personal-memory-mcp/master/install.ps1 | iex
+```
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/Emama-bit/personal-memory-mcp/master/install.sh | bash
+```
+
+安装完成后重启 Claude Desktop / Cursor 即可。
+
+### 方式二：手动安装
 
 ```bash
-cd agent
+git clone https://github.com/Emama-bit/personal-memory-mcp.git
+cd personal-memory-mcp/agent
 npm install
 ```
 
-### 2. 迁移旧数据（可选）
-
-```bash
-npm run migrate
-```
-
-### 3. 配置 Claude Desktop
+然后手动配置 Claude Desktop
 
 编辑 Claude Desktop 设置 → Developer → Edit Config：
 
