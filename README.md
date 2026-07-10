@@ -1,6 +1,6 @@
 # Personal Memory MCP Server
 
-> Give your AI a persistent memory — an MCP-based personal memory engine that remembers you across conversations.
+> A lightweight, seamless, and concise personal AI memory engine — your dedicated intelligent assistant that remembers you across every conversation.
 
 ## What is this
 
@@ -142,6 +142,10 @@ agent/
 ├── memory/agent.db          ← Local SQLite database (gitignored)
 └── package.json
 ```
+
+## Contact
+
+If you have any questions or suggestions, please contact me: lk2012943494@outlook.com
 
 ## License
 
