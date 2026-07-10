@@ -8,7 +8,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-import { addMemory, searchMemories, getRecentMemories, getMemoriesForPrompt, removeMemory, archiveOldMemories } from "./memory/memories";
+import { addMemory, searchMemories, getRecentMemories, getMemoriesForPrompt, removeMemory, archiveOldMemories, getDailyBriefing, getFollowUps } from "./memory/memories";
 import { upsertPerson, getPersonByName, getPersonSummary, getPeople, updatePersonRelation } from "./memory/people";
 import { addHabit, removeHabit, updatePreference, updateBio, updateName, getProfileSummary, loadProfile } from "./profile";
 import { importWeChatChat, importWeChatFile } from "./wechat";
@@ -236,6 +236,88 @@ server.tool(
   async (args) => {
     const result = importWeChatFile(args.filePath, args.ownerName || "");
     return { content: [{ type: "text", text: JSON.stringify(result) }] };
+  }
+);
+
+// ─── Phase 2: Proactive Intelligence ──────────────────────
+
+server.tool(
+  "get_daily_briefing",
+  "每日简报。在新对话开始时调用，返回：昨日记忆、待跟进事项、习惯异常提醒、近期重要事项。",
+  {},
+  async () => {
+    const briefing = getDailyBriefing();
+    const parts: string[] = [];
+
+    if (briefing.yesterday.length > 0) {
+      parts.push("## 昨日记忆");
+      for (const m of briefing.yesterday) {
+        parts.push(`- [${m.type}] ${m.content}`);
+      }
+    }
+
+    if (briefing.pendingFollowUps.length > 0) {
+      parts.push("\n## 待跟进事项");
+      for (const f of briefing.pendingFollowUps) {
+        parts.push(`- ${f}`);
+      }
+    }
+
+    if (briefing.habitAlerts.length > 0) {
+      parts.push("\n## ⚠️ 习惯提醒");
+      for (const a of briefing.habitAlerts) {
+        parts.push(`- ${a}`);
+      }
+    }
+
+    if (briefing.recentImportant.length > 0) {
+      parts.push("\n## 近期重要事项");
+      for (const m of briefing.recentImportant) {
+        parts.push(`- [${m.type}] ${m.content} (${m.created_at.slice(0, 10)})`);
+      }
+    }
+
+    if (parts.length === 0) {
+      parts.push("暂无需要关注的事项，一切正常 ✅");
+    }
+
+    return { content: [{ type: "text", text: parts.join("\n") }] };
+  }
+);
+
+server.tool(
+  "get_follow_ups",
+  "获取需要跟进的事项：未完成的计划、没有后续的决定、失联的人脉。适合在对话中主动提醒用户。",
+  {},
+  async () => {
+    const followUps = getFollowUps();
+    if (followUps.length === 0) {
+      return { content: [{ type: "text", text: "暂无需要跟进的事项 ✅" }] };
+    }
+
+    const parts = ["## 需要跟进的事项\n"];
+    for (const f of followUps) {
+      const m = f.memory;
+      parts.push(`- **${m.content}** (${m.created_at.slice(0, 10)})`);
+      parts.push(`  原因: ${f.reason}`);
+    }
+
+    return { content: [{ type: "text", text: parts.join("\n") }] };
+  }
+);
+
+server.tool(
+  "check_habit_patterns",
+  "检测习惯异常模式：最近某类活动频率下降、作息变化等。返回提醒列表。",
+  {},
+  async () => {
+    const briefing = getDailyBriefing();
+    if (briefing.habitAlerts.length === 0) {
+      return { content: [{ type: "text", text: "习惯模式正常，没有异常 ✅" }] };
+    }
+    return {
+      content: [{ type: "text", text: "## 习惯异常提醒\n" + briefing.habitAlerts.map(a => `- ${a}`).join("\n") }],
+    };
   }
 );
 

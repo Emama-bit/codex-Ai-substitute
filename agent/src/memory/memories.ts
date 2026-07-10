@@ -210,3 +210,170 @@ export function removeMemory(id: string): boolean {
   const result = db.prepare("DELETE FROM memories WHERE id = ?").run(id);
   return result.changes > 0;
 }
+
+// ─── Phase 2: Proactive Intelligence ──────────────────────
+
+export function getDailyBriefing(): {
+  yesterday: Memory[];
+  pendingFollowUps: string[];
+  habitAlerts: string[];
+  recentImportant: Memory[];
+} {
+  const db = getDb();
+
+  // Yesterday's memories
+  const yesterday = db.prepare(`
+    SELECT * FROM memories
+    WHERE archived = 0
+      AND created_at >= datetime('now', '-1 day')
+      AND created_at < datetime('now', 'start of day')
+    ORDER BY created_at DESC
+  `).all() as Memory[];
+
+  // Memories with question marks or TODO-like content (potential follow-ups)
+  const pendingFollowUps = db.prepare(`
+    SELECT content, details FROM memories
+    WHERE archived = 0
+      AND (content LIKE '%计划%' OR content LIKE '%打算%' OR content LIKE '%要%'
+           OR content LIKE '%准备%' OR content LIKE '%下周%' OR content LIKE '%明天%'
+           OR content LIKE '%TODO%' OR content LIKE '%待%')
+      AND created_at >= datetime('now', '-7 days')
+    ORDER BY created_at DESC LIMIT 5
+  `).all() as { content: string; details: string }[];
+
+  // Habit gap detection
+  const habitAlerts = detectHabitGaps(db);
+
+  // Recent high-importance memories
+  const recentImportant = db.prepare(`
+    SELECT * FROM memories
+    WHERE archived = 0 AND importance >= 7
+      AND created_at >= datetime('now', '-3 days')
+    ORDER BY importance DESC, created_at DESC LIMIT 5
+  `).all() as Memory[];
+
+  return {
+    yesterday,
+    pendingFollowUps: pendingFollowUps.map(m => m.content),
+    habitAlerts,
+    recentImportant,
+  };
+}
+
+function detectHabitGaps(db: ReturnType<typeof getDb>): string[] {
+  const alerts: string[] = [];
+
+  // Get all habits
+  const habits = db.prepare(`
+    SELECT content, category, created_at FROM memories
+    WHERE type = 'habit' AND archived = 0
+  `).all() as { content: string; category: string; created_at: string }[];
+
+  // Check if there are recent events related to each habit category
+  const categories = [...new Set(habits.map(h => h.category))];
+
+  for (const cat of categories) {
+    if (!cat) continue;
+
+    // Count events in this category in last 3 days
+    const recentCount = db.prepare(`
+      SELECT COUNT(*) as c FROM memories
+      WHERE type = 'event' AND category = ? AND archived = 0
+        AND created_at >= datetime('now', '-3 days')
+    `).get(cat) as { c: number };
+
+    // Count events in this category in the 3 days before that
+    const olderCount = db.prepare(`
+      SELECT COUNT(*) as c FROM memories
+      WHERE type = 'event' AND category = ? AND archived = 0
+        AND created_at >= datetime('now', '-6 days')
+        AND created_at < datetime('now', '-3 days')
+    `).get(cat) as { c: number };
+
+    if (olderCount.c > 0 && recentCount.c === 0) {
+      alerts.push(`最近3天没有关于"${cat}"的记录，之前有${olderCount.c}条`);
+    }
+  }
+
+  // Check for specific habit keywords
+  const exerciseHabit = habits.find(h => h.category === "运动" || /运动|健身|跑步/.test(h.content));
+  if (exerciseHabit) {
+    const lastExercise = db.prepare(`
+      SELECT created_at FROM memories
+      WHERE type = 'event' AND (category = '运动' OR content LIKE '%运动%' OR content LIKE '%健身%' OR content LIKE '%跑步%')
+        AND archived = 0
+      ORDER BY created_at DESC LIMIT 1
+    `).get() as { created_at: string } | undefined;
+
+    if (lastExercise) {
+      const daysSince = Math.floor((Date.now() - new Date(lastExercise.created_at).getTime()) / 86400000);
+      if (daysSince >= 3) {
+        alerts.push(`你已经${daysSince}天没有运动了`);
+      }
+    }
+  }
+
+  return alerts;
+}
+
+export function getFollowUps(): { memory: Memory; reason: string }[] {
+  const db = getDb();
+  const results: { memory: Memory; reason: string }[] = [];
+
+  // 1. Memories that mention plans/future actions
+  const plans = db.prepare(`
+    SELECT * FROM memories
+    WHERE archived = 0
+      AND (content LIKE '%计划%' OR content LIKE '%打算%' OR content LIKE '%要%'
+           OR content LIKE '%准备%' OR content LIKE '%下周%' OR content LIKE '%明天%')
+      AND created_at >= datetime('now', '-7 days')
+    ORDER BY created_at DESC LIMIT 10
+  `).all() as Memory[];
+
+  for (const m of plans) {
+    results.push({ memory: m, reason: "这是一个计划/打算，可能需要跟进" });
+  }
+
+  // 2. Decisions without follow-up events
+  const decisions = db.prepare(`
+    SELECT * FROM memories WHERE type = 'decision' AND archived = 0
+    ORDER BY created_at DESC LIMIT 5
+  `).all() as Memory[];
+
+  for (const d of decisions) {
+    // Check if there are events after this decision that relate to it
+    const followUp = db.prepare(`
+      SELECT COUNT(*) as c FROM memories
+      WHERE type = 'event' AND archived = 0
+        AND created_at > ?
+        AND (content LIKE ? OR details LIKE ?)
+    `).get(d.created_at, `%${d.content.slice(0, 20)}%`, `%${d.content.slice(0, 20)}%`) as { c: number };
+
+    if (followUp.c === 0) {
+      results.push({ memory: d, reason: "这个决定还没有后续行动记录" });
+    }
+  }
+
+  // 3. People with high interaction but no recent contact
+  const people = db.prepare(`
+    SELECT name, last_interaction, interaction_count FROM people
+    WHERE interaction_count >= 3
+    ORDER BY interaction_count DESC LIMIT 10
+  `).all() as { name: string; last_interaction: string; interaction_count: number }[];
+
+  for (const p of people) {
+    if (p.last_interaction) {
+      const daysSince = Math.floor((Date.now() - new Date(p.last_interaction).getTime()) / 86400000);
+      if (daysSince >= 7) {
+        const mem = db.prepare(`
+          SELECT * FROM memories WHERE archived = 0 AND people LIKE ? ORDER BY created_at DESC LIMIT 1
+        `).get(`%${p.name}%`) as Memory | undefined;
+        if (mem) {
+          results.push({ memory: mem, reason: `已经${daysSince}天没有和${p.name}联系了` });
+        }
+      }
+    }
+  }
+
+  return results.slice(0, 10);
+}
